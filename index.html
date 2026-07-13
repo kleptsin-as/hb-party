@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Wake up, Neo ...</title>
+
+  <meta property="og:title" content="Wake up, Neo ...">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://hb-party-2026.vercel.app/">
+  <meta property="og:image" content="https://hb-party-2026.vercel.app/og.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ИНТРО №1: печатающийся текст (до регистрации) -->
+  <div id="intro-typing" class="intro" hidden>
+    <pre id="typed-text"></pre>
+    <button id="skip-typing" class="skip-btn">пропустить &gt;&gt;</button>
+  </div>
+
+  <!-- ИНТРО №2: цифровой дождь (после регистрации) -->
+  <div id="intro-rain" class="intro" hidden>
+    <canvas id="rain-canvas"></canvas>
+    <button id="skip-rain" class="enter-btn">ENTER THE PARTY</button>
+  </div>
+
+  <!-- СИНЯЯ ТАБЛЕТКА: фейковое выключение экрана -->
+  <div id="blue-screen" class="intro" hidden>
+    <div id="crt-flash" class="crt-flash" hidden></div>
+    <pre id="blue-text"></pre>
+    <button id="blue-return" class="return-btn" hidden>change your mind?</button>
+  </div>
+
+  <!-- ЭКРАН «ДОСТУП РАЗРЕШЁН» — один раз, сразу после отправки анкеты -->
+  <div id="access-screen" class="intro" hidden>
+    <div class="access-inner">
+      <p class="sys-line">// проверка личности... ок</p>
+      <p id="access-title" class="access-title">&nbsp;</p>
+      <p id="access-name" class="pass-name"></p>
+      <p class="access-details">явка: 01–02.08.2026, 15:00<br>гостевой комплекс «Аллюр»</p>
+      <button id="access-continue" class="access-btn">продолжить &gt;&gt;</button>
+    </div>
+  </div>
+
+    <!-- АНКЕТА (открывается оверлеем по красной таблетке) -->
+    <div id="form-screen" class="intro intro-scroll" hidden>
+    <section id="form-section" class="terminal">
+      <p><button type="button" id="form-close" class="btn btn-ghost">&lt; назад</button></p>
+      <h2>&gt; регистрация_</h2>
+      <p class="dim" id="form-intro-note">Ответь на несколько вопросов — после этого откроется полная информация и ссылка на общий чат.</p>
+
+      <form id="wizard" novalidate>
+        <p class="progress" id="progress"></p>
+
+        <!-- Шаг 1 -->
+        <fieldset class="step" data-step="1">
+          <legend>кто ты?</legend>
+          <label>Имя *
+            <input type="text" name="firstName" autocomplete="given-name" maxlength="100" required>
+          </label>
+          <label>Фамилия *
+            <input type="text" name="lastName" autocomplete="family-name" maxlength="100" required>
+          </label>
+        </fieldset>
+
+        <!-- Шаг 2 -->
+        <fieldset class="step" data-step="2" hidden>
+          <legend>логистика</legend>
+          <p class="q">Остаёшься на ночь?</p>
+          <label class="choice"><input type="radio" name="overnight" value="Останусь ночевать"> Останусь ночевать</label>
+          <label class="choice"><input type="radio" name="overnight" value="Уеду вечером"> Уеду вечером</label>
+        </fieldset>
+
+        <!-- Шаг 3 -->
+        <fieldset class="step" data-step="3" hidden>
+          <legend>напитки</legend>
+          <p class="q">Что будешь пить?</p>
+          <label class="choice"><input type="checkbox" name="alcohol" value="Виски"> Виски</label>
+          <label class="choice"><input type="checkbox" name="alcohol" value="Водка"> Водка</label>
+          <label class="choice"><input type="checkbox" name="alcohol" value="Пиво"> Пиво</label>
+          <label class="choice"><input type="checkbox" name="alcohol" value="Вино"> Вино</label>
+          <label class="choice"><input type="checkbox" name="alcohol" value="Не пью алкоголь" id="no-alcohol"> Не пью алкоголь</label>
+          <label class="mt">Особые пожелания:
+            <input type="text" name="alcoholOther" maxlength="200" placeholder="например: жигулёвское / рислинг">
+          </label>
+
+          <p class="q mt">Что будешь из безалкогольного?</p>
+          <label class="choice"><input type="checkbox" name="softDrinks" value="Пиво"> Пиво</label>
+          <label class="choice"><input type="checkbox" name="softDrinks" value="Газировка"> Газировка</label>
+          <label class="choice"><input type="checkbox" name="softDrinks" value="Сок"> Сок</label>
+          <label class="choice"><input type="checkbox" name="softDrinks" value="Минералка"> Минералка</label>
+          <label class="mt">Особые пожелания:
+            <input type="text" name="softOther" maxlength="200" placeholder="например: кола зеро / вишнёвый сок">
+          </label>
+        </fieldset>
+
+        <p class="form-error" id="form-error" hidden></p>
+
+        <div class="btn-row">
+          <button type="button" class="btn btn-ghost" id="btn-back" hidden>&lt; назад</button>
+          <button type="button" class="btn btn-green" id="btn-next">далее &gt;</button>
+          <button type="submit" class="btn btn-red" id="btn-submit" hidden>отправить</button>
+        </div>
+      </form>
+    </section>
+    </div>
+
+  <main id="main" hidden>
+
+    <!-- АФИША -->
+    <section id="hero" class="terminal">
+      <p class="sys-line">// система: приглашение.exe запущено</p>
+      <h1>PES_SAMURAI<br>BIRTHDAY PARTY:<br>CINEMA EDITION</h1>
+      <p class="tagline">the matrix has you...</p>
+
+      <div class="event-facts">
+        <p><span class="label">&gt; дата:</span> 01–02 августа 2026</p>
+        <p><span class="label">&gt; время:</span> 15:00</p>
+        <p><span class="label">&gt; место:</span> гостевой комплекс «Аллюр»</p>
+        <p><span class="label">&gt; тема:</span> магия кино</p>
+        <p><span class="label">&gt; дресс-код:</span> образ из фильма/сериала</p>
+        <p><span class="label">&gt; формат:</span> вечеринка с ночевой</p>
+      </div>
+
+      <div id="countdown" class="countdown" aria-label="обратный отсчёт до события">
+        <div class="cd-cell"><span id="cd-d">--</span><small>дней</small></div>
+        <div class="cd-cell"><span id="cd-h">--</span><small>часов</small></div>
+        <div class="cd-cell"><span id="cd-m">--</span><small>минут</small></div>
+        <div class="cd-cell"><span id="cd-s">--</span><small>секунд</small></div>
+      </div>
+
+      <p class="deadline">подтверди участие до <strong>12 июля</strong></p>
+      <p class="deadline">что ты выберешь — остаться рабом системы или присоединиться к сопротивлению?</p>
+
+      <div class="pill-choice" id="pill-choice">
+        <button class="pill-btn pill-btn-red" id="pill-red">реальность</button>
+        <button class="pill-btn pill-btn-blue" id="pill-blue">иллюзия</button>
+      </div>
+      <div class="hero-registered" id="hero-registered" hidden>
+        <p>&gt; статус: <strong>ты уже в списке</strong></p>
+        <div class="btn-row">
+          <a href="#unlocked" class="btn btn-ghost">к информации</a>
+          <button class="btn btn-ghost" id="btn-edit">изменить ответы</button>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ПОСЛЕ РЕГИСТРАЦИИ -->
+    <section id="unlocked" class="terminal" hidden>
+      <div id="pass-card" class="pass-card">
+        <p class="sys-line">// доступ разрешён</p>
+        <h2 class="pass-title">ДОБРО ПОЖАЛОВАТЬ<br>НА ВЕЧЕРИНКУ</h2>
+        <p class="pass-name" id="pass-name"></p>
+        <p class="pass-details">явка: 01.08.2026, 15:00<br>гостевой комплекс «Аллюр»</p>
+      </div>
+
+      <h2 class="mt">&gt; общий_чат_</h2>
+      <p class="dim">Все оперативные новости — здесь:</p>
+      <p class="btn-row"><a class="btn btn-green" id="chat-link" href="#" target="_blank" rel="noopener">подключиться к каналу связи</a></p>
+
+      <h2 class="mt">&gt; место_</h2>
+      <p>Гостевой комплекс <strong>«Аллюр»</strong></p>
+      <p class="dim">За городом в районе Усть-Качки</p>
+      <div class="btn-row">
+        <a class="btn btn-green" href="https://yandex.ru/maps/-/CTeoj8Og" target="_blank" rel="noopener">открыть в Яндекс.Картах</a>
+        <a class="btn btn-ghost" href="https://allur-perm.ru/" target="_blank" rel="noopener">сайт площадки</a>
+      </div>
+
+      <h2 class="mt">&gt; взять_с_собой_</h2>
+      <ul class="checklist">
+        <li>[ ] плавки / купальник</li>
+        <li>[ ] банные принадлежности</li>
+        <li>[ ] футбольная форма и обувь</li>
+        <li>[ ] костюм киногероя</li>
+        <li>[ ] фирменное блюдо</li>
+      </ul>
+
+      <h2 class="mt">&gt; загрузка_программ_</h2>
+      <ul class="program-list">
+        <li><span class="file">football.exe</span> покатаем мячик</li>
+        <li><span class="file">pool.exe</span> освежимся после матча</li>
+        <li><span class="file">banya.exe</span> расслабимся и отдохнем</li>
+        <li><span class="file">quiz.exe</span> проверим эрудицию</li>
+        <li><span class="file">PES.exe</span> устроим турнир</li>
+        <li><span class="file">oscar.exe</span> голосуем за победителей</li>
+        <li><span class="file">party.exe</span> вернем 2007-й на танцполе</li>
+      </ul>
+
+      <h2 class="mt">&gt; премия_«оскар»_</h2>
+      <p class="dim">Номинации:</p>
+      <ul class="checklist">
+        <li>лучший костюм</li>
+        <li>лучшее поздравление</li>
+        <li>лучшее фирменное блюдо</li>
+        <li>лучший футболист</li>
+        <li>лучший онлайн тренер</li>
+        <li>лучший киновед</li>
+      </ul>
+
+      <h2 class="mt">&gt; вишлист_</h2>
+      <p>денежный взнос на борьбу с диктатурой разумных машин</p>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
