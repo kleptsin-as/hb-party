@@ -5,7 +5,7 @@
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9wJlQV6N5xvboJv6eT0CmDpFV88wBHkefoVBlxW3_sHaOV6R87jvK0yoAqFTFXZVm/exec';
 // ссылка на чат собирается из частей, чтобы не лежать в исходнике целиком
 const CHAT_URL_PARTS = ['https://t.me/', '+l61inXuAIvw2MTEy'];
-const EVENT_DATE = new Date('2026-08-01T15:00:00+05:00'); // Пермь, UTC+5
+const EVENT_DATE = new Date('2026-08-01T14:00:00+05:00'); // Пермь, UTC+5
 
 const TYPING_LINES = [
   'Wake up, Neo...',
