@@ -320,7 +320,20 @@ h2::after { content: "▌"; animation: blink 1.1s steps(1) infinite; }
 /* ---------- форма ---------- */
 .progress { color: var(--green-dim); margin-bottom: 14px; letter-spacing: 0.1em; }
 
-fieldset.step { border: none; }
+fieldset.step, fieldset.nom { border: none; }
+
+/* результаты «Оскара» */
+.res-card { border: 1px solid var(--green-dark); padding: 14px; margin-bottom: 14px; }
+.res-title { color: var(--green-dim); margin-bottom: 8px; }
+.res-winner {
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  margin: 6px 0;
+}
+.res-rest { color: var(--green-dim); font-size: 14px; }
+fieldset.nom { margin-bottom: 22px; }
 legend {
   font-size: 18px;
   text-shadow: var(--glow);
