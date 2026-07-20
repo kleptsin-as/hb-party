@@ -35,14 +35,17 @@ const GUESTS = [
   'Илья Бобров', 'Александр Висков', 'Арина Вискова'
 ];
 
+// голосуем только за эти четыре — «онлайн тренер» и «киновед»
+// определяются по результатам турнира и квиза
 const NOMINATIONS = [
   { key: 'costume', title: 'лучший костюм' },
   { key: 'toast', title: 'лучшее поздравление' },
   { key: 'dish', title: 'лучшее фирменное блюдо' },
-  { key: 'footballer', title: 'лучший футболист' },
-  { key: 'coach', title: 'лучший онлайн тренер' },
-  { key: 'cinema', title: 'лучший киновед' }
+  { key: 'footballer', title: 'лучший футболист' }
 ];
+
+// подтягивается из листа «Номинанты»; если связи нет — падаем на полный список GUESTS
+let CANDIDATES = null;
 
 /* ================= утилиты ================= */
 
@@ -382,6 +385,49 @@ function votingIsOpen() {
   return location.search.indexOf('vote') > -1 || Date.now() >= VOTING_OPENS;
 }
 
+function candidatesFor(key) {
+  const list = CANDIDATES && CANDIDATES.nominations && CANDIDATES.nominations[key];
+  return (list && list.length) ? list : GUESTS;
+}
+
+function voterList() {
+  const list = CANDIDATES && CANDIDATES.voters;
+  return (list && list.length) ? list : GUESTS;
+}
+
+async function loadCandidates() {
+  try {
+    const res = await fetch(APPS_SCRIPT_URL + '?candidates=' + RESULTS_KEY);
+    const j = await res.json();
+    if (j.ok && j.data) CANDIDATES = j.data;
+  } catch (e) { /* нет связи — работаем на встроенном списке */ }
+  fillVoterSelect();
+  renderNominations();
+}
+
+function fillVoterSelect() {
+  const sel = $('#voter-select');
+  const chosen = sel.value;
+  sel.innerHTML = '<option value="">— выбери себя —</option>';
+  voterList().forEach((name) => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    sel.appendChild(opt);
+  });
+
+  if (chosen && voterList().indexOf(chosen) > -1) {
+    sel.value = chosen;
+    return;
+  }
+  // подставляем себя по имени из регистрации
+  const myName = store.get(LS.name);
+  if (myName) {
+    const guess = voterList().find((g) => g.split(' ')[0].toLowerCase() === myName.toLowerCase());
+    if (guess) sel.value = guess;
+  }
+}
+
 function renderNominations() {
   const box = $('#nominations');
   const me = $('#voter-select').value;
@@ -392,7 +438,7 @@ function renderNominations() {
     const legend = document.createElement('legend');
     legend.textContent = nom.title;
     field.appendChild(legend);
-    GUESTS.forEach((name) => {
+    candidatesFor(nom.key).forEach((name) => {
       if (name === me) return; // за себя нельзя
       const label = document.createElement('label');
       label.className = 'choice';
@@ -410,20 +456,9 @@ function renderNominations() {
 
 function initVoting() {
   const sel = $('#voter-select');
-  GUESTS.forEach((name) => {
-    const opt = document.createElement('option');
-    opt.value = name;
-    opt.textContent = name;
-    sel.appendChild(opt);
-  });
-
-  // подставляем себя по имени из регистрации
-  const myName = store.get(LS.name);
-  if (myName) {
-    const guess = GUESTS.find((g) => g.split(' ')[0].toLowerCase() === myName.toLowerCase());
-    if (guess) sel.value = guess;
-  }
+  fillVoterSelect();
   renderNominations();
+  loadCandidates();               // обновит списки, когда ответит таблица
   sel.addEventListener('change', renderNominations);
 
   const openVote = () => {
