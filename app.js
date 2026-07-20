@@ -18,8 +18,31 @@ const TYPING_LINES = [
 const LS = {
   registered: 'hb_registered',
   name: 'hb_name',
-  answers: 'hb_answers'
+  answers: 'hb_answers',
+  voted: 'hb_voted'
 };
+
+/* ---- голосование «Оскар» ---- */
+
+// голосование открывается автоматически; ?vote в адресе открывает его принудительно (для теста)
+const VOTING_OPENS = new Date('2026-08-01T19:00:00+05:00');
+
+const GUESTS = [
+  'Ксения Даньшина', 'Мария Малышня', 'Володя Дейнега', 'Александр Блюденов',
+  'Ivan K', 'Вячеслав Боровых', 'Диана Дейнега', 'Илья Сыпачев',
+  'Надежда Сыпачева', 'Саша Клепцин', 'Егор Занчурин', 'Ксения Боровых',
+  'Мария Занчурина', 'Нео Максимович', 'Маша Боброва', 'Алина Баевская',
+  'Илья Бобров', 'Александр Висков', 'Арина Вискова'
+];
+
+const NOMINATIONS = [
+  { key: 'costume', title: 'лучший костюм' },
+  { key: 'toast', title: 'лучшее поздравление' },
+  { key: 'dish', title: 'лучшее фирменное блюдо' },
+  { key: 'footballer', title: 'лучший футболист' },
+  { key: 'coach', title: 'лучший онлайн тренер' },
+  { key: 'cinema', title: 'лучший киновед' }
+];
 
 /* ================= утилиты ================= */
 
@@ -171,7 +194,8 @@ let currentStep = 1;
 
 function showStep(n) {
   currentStep = n;
-  document.querySelectorAll('.step').forEach((f) => {
+  // строго внутри анкеты — иначе заденет фиелдсеты голосования
+  $('#wizard').querySelectorAll('.step').forEach((f) => {
     f.hidden = Number(f.dataset.step) !== n;
   });
   $('#btn-back').hidden = n === 1;
@@ -352,6 +376,194 @@ function runBluePill() {
   };
 }
 
+/* ================= голосование «Оскар» ================= */
+
+function votingIsOpen() {
+  return location.search.indexOf('vote') > -1 || Date.now() >= VOTING_OPENS;
+}
+
+function renderNominations() {
+  const box = $('#nominations');
+  const me = $('#voter-select').value;
+  box.innerHTML = '';
+  NOMINATIONS.forEach((nom) => {
+    const field = document.createElement('fieldset');
+    field.className = 'nom';
+    const legend = document.createElement('legend');
+    legend.textContent = nom.title;
+    field.appendChild(legend);
+    GUESTS.forEach((name) => {
+      if (name === me) return; // за себя нельзя
+      const label = document.createElement('label');
+      label.className = 'choice';
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = nom.key;
+      input.value = name;
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(' ' + name));
+      field.appendChild(label);
+    });
+    box.appendChild(field);
+  });
+}
+
+function initVoting() {
+  const sel = $('#voter-select');
+  GUESTS.forEach((name) => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    sel.appendChild(opt);
+  });
+
+  // подставляем себя по имени из регистрации
+  const myName = store.get(LS.name);
+  if (myName) {
+    const guess = GUESTS.find((g) => g.split(' ')[0].toLowerCase() === myName.toLowerCase());
+    if (guess) sel.value = guess;
+  }
+  renderNominations();
+  sel.addEventListener('change', renderNominations);
+
+  $('#open-vote').addEventListener('click', () => {
+    $('#vote-screen').hidden = false;
+    $('#main').hidden = true;
+    $('#vote-screen').scrollTop = 0;
+  });
+  $('#vote-close').addEventListener('click', () => {
+    $('#vote-screen').hidden = true;
+    $('#main').hidden = false;
+  });
+  $('#vote-again').addEventListener('click', () => {
+    $('#vote-done').hidden = true;
+    $('#vote-form').hidden = false;
+  });
+  $('#vote-form').addEventListener('submit', submitVote);
+
+  if (votingIsOpen()) $('#vote-block').hidden = false;
+  if (store.get(LS.voted) === '1') {
+    $('#vote-status').hidden = false;
+    $('#vote-form').hidden = true;
+    $('#vote-done').hidden = false;
+  }
+}
+
+async function submitVote(e) {
+  e.preventDefault();
+  const err = $('#vote-error');
+  err.hidden = true;
+
+  const form = $('#vote-form');
+  const voter = form.voter.value;
+  if (!voter) { err.textContent = 'Выбери себя в списке — иначе голос не засчитается.'; err.hidden = false; return; }
+
+  const votes = {};
+  const missing = [];
+  NOMINATIONS.forEach((nom) => {
+    const picked = form.querySelector('input[name="' + nom.key + '"]:checked');
+    if (picked) votes[nom.key] = picked.value; else missing.push(nom.title);
+  });
+  if (missing.length) {
+    err.textContent = 'Не выбран номинант: ' + missing.join(', ') + '.';
+    err.hidden = false;
+    return;
+  }
+
+  const btn = $('#vote-submit');
+  btn.disabled = true;
+  btn.textContent = 'отправка...';
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ type: 'vote', voter: voter, votes: votes })
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'server error');
+    store.set(LS.voted, '1');
+    $('#vote-form').hidden = true;
+    $('#vote-done').hidden = false;
+    $('#vote-status').hidden = false;
+  } catch (ex) {
+    err.textContent = 'Голос не ушёл — проверь связь и нажми ещё раз.';
+    err.hidden = false;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'отправить голос';
+  }
+}
+
+/* ================= результаты (экран ведущего) ================= */
+
+const RESULTS_KEY = 'neo';
+
+async function showResults() {
+  $('#results-screen').hidden = false;
+  $('#main').hidden = true;
+  const note = $('#results-note');
+  const list = $('#results-list');
+
+  let data;
+  try {
+    const res = await fetch(APPS_SCRIPT_URL + '?results=' + RESULTS_KEY);
+    const json = await res.json();
+    if (!json.ok || !json.results) throw new Error('no results');
+    data = json.results;
+  } catch (e) {
+    note.textContent = 'не удалось загрузить результаты — проверь связь и обнови страницу';
+    return;
+  }
+
+  note.textContent = 'нажимай «вскрыть конверт» по очереди';
+  list.innerHTML = '';
+
+  NOMINATIONS.forEach((nom) => {
+    const card = document.createElement('div');
+    card.className = 'res-card';
+
+    const title = document.createElement('p');
+    title.className = 'res-title';
+    title.textContent = '> ' + nom.title;
+    card.appendChild(title);
+
+    const ranking = data[nom.key] || [];
+    const body = document.createElement('div');
+    body.hidden = true;
+
+    if (!ranking.length) {
+      body.innerHTML = '<p class="res-rest">голосов нет</p>';
+    } else {
+      const win = document.createElement('p');
+      win.className = 'res-winner';
+      win.textContent = ranking[0].name.toUpperCase();
+      body.appendChild(win);
+
+      const votes = document.createElement('p');
+      votes.className = 'res-rest';
+      votes.textContent = 'голосов: ' + ranking[0].votes;
+      body.appendChild(votes);
+
+      if (ranking.length > 1) {
+        const rest = document.createElement('p');
+        rest.className = 'res-rest';
+        rest.textContent = 'далее: ' + ranking.slice(1, 4)
+          .map((r) => r.name + ' (' + r.votes + ')').join(', ');
+        body.appendChild(rest);
+      }
+    }
+
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-red';
+    btn.textContent = 'вскрыть конверт';
+    btn.addEventListener('click', () => { body.hidden = false; btn.hidden = true; }, { once: true });
+
+    card.appendChild(btn);
+    card.appendChild(body);
+    list.appendChild(card);
+  });
+}
+
 /* ================= экран «доступ разрешён» ================= */
 
 function showAccessScreen(name) {
@@ -430,6 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
     submitForm();
   });
   $('#btn-edit').addEventListener('click', reopenForm);
+  initVoting();
 
   // «не пью алкоголь» исключает остальные варианты
   const noAlc = $('#no-alcohol');
@@ -453,6 +666,9 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#main').hidden = false;
     window.scrollTo({ top: 0 });
   });
+
+  // экран ведущего с результатами — минуя интро и всё остальное
+  if (location.search.indexOf('results') > -1) { showResults(); return; }
 
   // интро
   if (isRegistered()) {
