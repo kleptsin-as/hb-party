@@ -111,6 +111,43 @@
     </section>
     </div>
 
+  <!-- ГОЛОСОВАНИЕ (оверлей) -->
+  <div id="vote-screen" class="intro intro-scroll" hidden>
+    <section class="terminal">
+      <p><button type="button" id="vote-close" class="btn btn-ghost">&lt; назад</button></p>
+      <h2>&gt; голосование_</h2>
+      <p class="dim">Премия «Оскар». По одному номинанту в каждой категории — за себя голосовать нельзя.</p>
+
+      <form id="vote-form" novalidate>
+        <label>Ты голосуешь как *
+          <select name="voter" id="voter-select">
+            <option value="">— выбери себя —</option>
+          </select>
+        </label>
+        <div id="nominations"></div>
+        <p class="form-error" id="vote-error" hidden></p>
+        <div class="btn-row">
+          <button type="submit" class="btn btn-red" id="vote-submit">отправить голос</button>
+        </div>
+      </form>
+
+      <div id="vote-done" hidden>
+        <p class="pass-name">ГОЛОС ПРИНЯТ</p>
+        <p class="dim">Результаты объявим на церемонии.</p>
+        <p class="btn-row"><button class="btn btn-ghost" id="vote-again">переголосовать</button></p>
+      </div>
+    </section>
+  </div>
+
+  <!-- РЕЗУЛЬТАТЫ ГОЛОСОВАНИЯ (только для ведущего: ?results) -->
+  <div id="results-screen" class="intro intro-scroll" hidden>
+    <section class="terminal">
+      <h2>&gt; премия_«оскар»_</h2>
+      <p class="dim" id="results-note">загрузка результатов...</p>
+      <div id="results-list"></div>
+    </section>
+  </div>
+
   <main id="main" hidden>
 
     <!-- АФИША -->
@@ -192,6 +229,11 @@
       </ul>
 
       <h2 class="mt">&gt; премия_«оскар»_</h2>
+      <div id="vote-block" hidden>
+        <p>Голосование открыто — выбери победителей:</p>
+        <p class="btn-row"><button class="btn btn-red" id="open-vote">голосовать</button></p>
+        <p class="dim" id="vote-status" hidden>&gt; твой голос учтён</p>
+      </div>
       <p class="dim">Номинации:</p>
       <ul class="checklist">
         <li>лучший костюм</li>
