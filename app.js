@@ -426,11 +426,13 @@ function initVoting() {
   renderNominations();
   sel.addEventListener('change', renderNominations);
 
-  $('#open-vote').addEventListener('click', () => {
+  const openVote = () => {
     $('#vote-screen').hidden = false;
     $('#main').hidden = true;
     $('#vote-screen').scrollTop = 0;
-  });
+  };
+  $('#open-vote').addEventListener('click', openVote);
+  $('#open-vote-hero').addEventListener('click', openVote);
   $('#vote-close').addEventListener('click', () => {
     $('#vote-screen').hidden = true;
     $('#main').hidden = false;
@@ -441,7 +443,12 @@ function initVoting() {
   });
   $('#vote-form').addEventListener('submit', submitVote);
 
-  if (votingIsOpen()) $('#vote-block').hidden = false;
+  // вход в голосование виден всем — регистрация в этом браузере может отсутствовать
+  // (localStorage привязан к домену, а сайт живёт на двух)
+  if (votingIsOpen()) {
+    $('#vote-block').hidden = false;
+    $('#vote-cta').hidden = false;
+  }
   if (store.get(LS.voted) === '1') {
     $('#vote-status').hidden = false;
     $('#vote-form').hidden = true;
