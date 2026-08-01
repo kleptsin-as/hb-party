@@ -39,7 +39,6 @@ const GUESTS = [
 // определяются по результатам турнира и квиза
 const NOMINATIONS = [
   { key: 'costume', title: 'лучший костюм' },
-  { key: 'toast', title: 'лучшее поздравление' },
   { key: 'dish', title: 'лучшее фирменное блюдо' },
   { key: 'footballer', title: 'лучший футболист' }
 ];
